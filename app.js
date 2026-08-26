@@ -3,8 +3,8 @@
    ============================================= */
 
 // ---- CONFIG ----
-const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const SUPABASE_URL = 'https://wcgwgaiqjqzsdtqswers.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_xU3iy3LkC4tnrMwsU3Tc0Q_InEjND_F';
 
 let supabase;
 try {
