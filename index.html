@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Nova Wallet — Simulated Crypto Wallet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body class="app-mode">
+
+<div id="toasts"></div>
+
+<div class="app-frame" id="appFrame">
+
+  <!-- ================= AUTH AREA ================= -->
+  <div class="auth-area" id="authArea">
+
+    <!-- Login -->
+    <section id="authLogin">
+      <div class="auth-hero">
+        <div class="brand-mark">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="#27BC95" stroke-width="2"/><path d="M12 7.5v9M9.4 10.2c0-1 1.1-1.7 2.6-1.7s2.6.7 2.6 1.7-.9 1.4-2.6 1.8c-1.7.4-2.6.8-2.6 1.8s1.1 1.7 2.6 1.7 2.6-.7 2.6-1.7" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </div>
+        <h1>Nova Wallet</h1>
+        <p>Your premium crypto wallet, reimagined.</p>
+      </div>
+
+      <div class="card auth-card">
+        <div class="form-error" id="loginError"></div>
+        <div class="field-row">
+          <label class="input-label">Mobile or Email</label>
+          <input class="input" id="loginId" placeholder="98XXXXXXXX or you@mail.com" autocomplete="username">
+        </div>
+        <div class="field-row">
+          <label class="input-label">Password</label>
+          <div class="input-wrap">
+            <input class="input" id="loginPw" type="password" placeholder="••••••••" autocomplete="current-password">
+            <button class="pw-toggle" data-pw="loginPw" aria-label="Show password"><i data-lucide="eye"></i></button>
+          </div>
+        </div>
+        <button class="btn" id="btnLogin">Log In</button>
+        <div style="text-align:center;margin-top:.85rem">
+          <button style="font-size:.82rem;font-weight:700;color:var(--ink-2)" id="btnForgot">Forgot password?</button>
+        </div>
+      </div>
+      <p class="switch-link">New to Nova? <b id="goSignup">Create account</b></p>
+      <p class="disclaimer">This platform is a demo wallet simulator for educational and entertainment purposes only. No real cryptocurrency transactions or banking transfers occur here.</p>
+    </section>
+
+    <!-- Signup -->
+    <section id="authSignup" class="hidden">
+      <div class="auth-hero" style="padding-top:2.4rem">
+        <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="#27BC95" stroke-width="2"/><path d="M12 7.5v9M9.4 10.2c0-1 1.1-1.7 2.6-1.7s2.6.7 2.6 1.7-.9 1.4-2.6 1.8c-1.7.4-2.6.8-2.6 1.8s1.1 1.7 2.6 1.7 2.6-.7 2.6-1.7" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+        <h1>Create account</h1>
+        <p>Set up your simulated wallet in seconds.</p>
+      </div>
+
+      <div class="card auth-card">
+        <div class="form-error" id="signupError"></div>
+        <div class="field-row"><label class="input-label">Username *</label><input class="input" id="suName" placeholder="e.g. udit"></div>
+        <div class="field-row"><label class="input-label">Mobile Number *</label><input class="input" id="suMobile" placeholder="10-digit number" inputmode="numeric" maxlength="10"></div>
+        <div class="field-row"><label class="input-label">Email (optional)</label><input class="input" id="suEmail" type="email" placeholder="you@mail.com"></div>
+        <div class="field-row">
+          <label class="input-label">Password *</label>
+          <div class="input-wrap"><input class="input" id="suPw" type="password" placeholder="Min 6 characters"><button class="pw-toggle" data-pw="suPw"><i data-lucide="eye"></i></button></div>
+        </div>
+        <div class="field-row"><label class="input-label">Confirm Password *</label><input class="input" id="suPw2" type="password" placeholder="Repeat password"></div>
+        <div class="field-row check-line">
+          <input type="checkbox" id="suTerms">
+          <span>I agree to the <b>Terms of Service</b> and understand this is a <b>simulation platform</b> with no real financial activity.</span>
+        </div>
+        <button class="btn" id="btnSignup">Create Account</button>
+      </div>
+      <p class="switch-link">Already registered? <b id="goLogin">Log in</b></p>
+      <p class="disclaimer">This platform is a demo wallet simulator for educational and entertainment purposes only. No real cryptocurrency transactions or banking transfers occur here.</p>
+    </section>
+  </div>
+
+  <!-- ================= MAIN APP ================= -->
+  <div class="screens hidden" id="screens">
+
+    <!-- ---------- HOME ---------- -->
+    <section class="screen active" id="scr-home">
+      <header class="topbar">
+        <div>
+          <div class="tag" id="homeGreetTag">GOOD MORNING</div>
+          <h2 id="homeGreetName" style="font-size:1.05rem">—</h2>
+        </div>
+        <div style="display:flex;gap:.5rem">
+          <button class="icon-btn bell-btn" id="bellBtn" aria-label="Notifications"><i data-lucide="bell" style="width:19px;height:19px"></i><span class="bell-dot hidden" id="bellDot">0</span></button>
+          <button class="avatar" id="avatarBtn">N</button>
+        </div>
+      </header>
+
+      <div id="announceSlot"></div>
+
+      <div class="hero-card">
+        <div class="tag">TOTAL PORTFOLIO · SIMULATED</div>
+        <div class="hero-balance" id="portfolioTotal">₹0.00</div>
+        <div class="hero-sub">
+          <span class="delta up" id="portfolioDelta">+0.00%</span>
+          <span id="portfolioDeltaAmt">≈ ₹0.00 today</span>
+        </div>
+        <div class="hero-chart-box">
+          <div class="range-chips" id="rangeChips">
+            <button class="rc" data-r="24H">24H</button>
+            <button class="rc active" data-r="7D">7D</button>
+            <button class="rc" data-r="MAX">MAX</button>
+          </div>
+          <canvas id="portfolioChart"></canvas>
+        </div>
+      </div>
+
+      <div class="quick-grid">
+        <button class="qa" data-open="sendModal"><i data-lucide="arrow-up-right"></i><span>Send</span></button>
+        <button class="qa" data-open="receiveModal"><i data-lucide="arrow-down-left"></i><span>Receive</span></button>
+        <button class="qa" data-open="withdrawSheet"><i data-lucide="banknote"></i><span>Withdraw</span></button>
+        <button class="qa" data-open="depositModal"><i data-lucide="plus-circle"></i><span>Add Funds</span></button>
+      </div>
+
+      <div class="section-head"><h3>Top Holdings</h3><a href="#" id="linkAllWallet">See all</a></div>
+      <div class="holdings-list scroll-y" id="topHoldings" style="max-height:280px"></div>
+      <p class="disclaimer">Demo wallet simulator — balances are fictional. No real cryptocurrency is held or transferred.</p>
+    </section>
+
+    <!-- ---------- MARKETS ---------- -->
+    <section class="screen" id="scr-markets">
+      <header class="topbar"><h2>Markets</h2><span class="badge neutral" id="mktsLive"><i data-lucide="radio" style="width:11px;height:11px"></i>live</span></header>
+      <div class="search-box"><i data-lucide="search"></i><input class="input" id="mktSearch" placeholder="Search Bitcoin, Solana…"></div>
+      <div class="tab-row scroll-x" style="padding-bottom:.4rem">
+        <button class="chip active" data-mkt-tab="trending">Trending</button>
+        <button class="chip" data-mkt-tab="gainers">Top Gainers</button>
+        <button class="chip" data-mkt-tab="losers">Top Losers</button>
+        <button class="chip" data-mkt-tab="watchlist">★ Watchlist</button>
+      </div>
+      <div class="holdings-list scroll-y" id="marketsList" style="max-height:calc(100% - 150px);margin-top:.6rem"></div>
+      <p class="disclaimer">Live prices are fetched from a public market API (INR) for display only and never modify simulated balances.</p>
+    </section>
+
+    <!-- ---------- WALLET ---------- -->
+    <section class="screen" id="scr-wallet">
+      <header class="topbar">
+        <h2>My Wallet</h2>
+        <button class="icon-btn" data-open="withdrawSheet" aria-label="Withdraw"><i data-lucide="banknote" style="width:18px;height:18px"></i></button>
+      </header>
+      <div class="card wallet-total"><div class="tag">TOTAL VALUE</div><b id="walletTotal">₹0.00</b></div>
+      <div class="inr-strip"><i data-lucide="indian-rupee" style="width:17px;height:17px;color:var(--brand)"></i><span style="font-size:.8rem;color:var(--ink-2);font-weight:600">Cash balance</span><b style="margin-left:auto" id="inrBal">₹0.00</b><button class="mini-btn ok" data-open="depositModal" style="margin-left:.4rem">＋ Add</button></div>
+      <div class="search-box"><i data-lucide="search"></i><input class="input" id="walSearch" placeholder="Search assets…"></div>
+      <div class="holdings-list scroll-y" id="walletList" style="max-height:calc(100% - 260px)"></div>
+      <p class="disclaimer">Simulated wallet — all assets shown are fictional demo balances.</p>
+    </section>
+
+    <!-- ---------- ACTIVITY ---------- -->
+    <section class="screen" id="scr-activity">
+      <header class="topbar"><h2>Activity</h2><button class="icon-btn" id="refreshTx" aria-label="Refresh"><i data-lucide="refresh-cw" style="width:17px;height:17px"></i></button></header>
+      <div class="tab-row scroll-x" style="padding-bottom:.4rem">
+        <button class="chip active" data-tx-f="all">All</button>
+        <button class="chip" data-tx-f="sent">Sent</button>
+        <button class="chip" data-tx-f="received">Received</button>
+        <button class="chip" data-tx-f="withdrawal">Withdrawals</button>
+        <button class="chip" data-tx-f="deposit">Deposits</button>
+      </div>
+      <div id="activityList" style="margin-top:.5rem"></div>
+      <p class="disclaimer">Transaction records exist only inside this simulator.</p>
+    </section>
+
+    <!-- ---------- PROFILE ---------- -->
+    <section class="screen" id="scr-profile">
+      <header class="topbar"><h2>Profile</h2></header>
+      <div class="card profile-card">
+        <div class="big-avatar" id="profAvatar">N</div>
+        <div style="min-width:0">
+          <b id="profName" style="font-size:1.05rem">—</b>
+          <div style="font-size:.8rem;color:var(--ink-2)" id="profContact">—</div>
+          <span class="badge up" style="margin-top:.35rem" id="profRoleBadge">VERIFIED · SIM</span>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-row"><i data-lucide="at-sign"></i><span class="grow">Username</span><span id="pfUser" style="color:var(--ink-2)">—</span></div>
+        <div class="setting-row"><i data-lucide="smartphone"></i><span class="grow">Mobile</span><span id="pfMobile" style="color:var(--ink-2)">—</span></div>
+        <div class="setting-row"><i data-lucide="mail"></i><span class="grow">Email</span><span id="pfEmail" style="color:var(--ink-2)">—</span></div>
+        <div class="setting-row" style="display:block">
+          <div style="display:flex;gap:.85rem;align-items:center"><i data-lucide="wallet-minimal"></i><span class="grow">Wallet Address</span></div>
+          <div class="addr-pill" style="margin:.6rem 0 0;font-size:.74rem" id="pfAddress">—</div>
+        </div>
+        <div class="setting-row"><i data-lucide="calendar"></i><span class="grow">Member since</span><span id="pfJoined" style="color:var(--ink-2)">—</span></div>
+      </div>
+
+      <div class="section-head"><h3>Settings</h3></div>
+      <div class="setting-group">
+        <div class="setting-row"><i data-lucide="moon"></i><span class="grow">Dark Mode</span><button class="toggle" id="themeToggle" aria-label="Toggle dark mode"></button></div>
+        <div class="setting-row"><i data-lucide="bell-ring"></i><span class="grow">Notifications<span class="muted">Local alert preference</span></span><button class="toggle on" id="notifToggle"></button></div>
+        <button class="setting-row" id="openSecurity"><i data-lucide="shield-check"></i><span class="grow">Security</span><i data-lucide="chevron-right" style="color:var(--ink-3)"></i></button>
+        <button class="setting-row" id="openWithdrawHistory"><i data-lucide="receipt-text"></i><span class="grow">Withdrawal History</span><i data-lucide="chevron-right" style="color:var(--ink-3)"></i></button>
+        <div class="setting-row"><i data-lucide="languages"></i><span class="grow">Language</span>
+          <select id="langSel" class="chip" style="font-weight:700"><option>English</option><option>हिन्दी (soon)</option><option>Español (soon)</option></select>
+        </div>
+        <a class="setting-row" id="adminLink" href="/admin.html"><i data-lucide="layout-dashboard"></i><span class="grow">Admin Console</span><i data-lucide="external-link" style="color:var(--ink-3)"></i></a>
+        <button class="setting-row" id="btnLogout" style="color:var(--down)"><i data-lucide="log-out" style="color:var(--down)"></i><span class="grow">Log Out</span></button>
+      </div>
+      <p class="disclaimer">This platform is a demo wallet simulator for educational and entertainment purposes only. No real cryptocurrency transactions or banking transfers occur here.</p>
+    </section>
+  </div>
+
+  <!-- ================= BOTTOM NAV ================= -->
+  <nav class="bottom-nav hidden" id="bottomNav">
+    <button class="nav-item active" data-nav="home"><i data-lucide="house"></i><span>HOME</span></button>
+    <button class="nav-item" data-nav="markets"><i data-lucide="chart-candlestick"></i><span>MARKETS</span></button>
+    <button class="nav-item" data-nav="wallet"><i data-lucide="wallet"></i><span>WALLET</span></button>
+    <button class="nav-item" data-nav="activity"><i data-lucide="list"></i><span>ACTIVITY</span></button>
+    <button class="nav-item" data-nav="profile"><i data-lucide="circle-user-round"></i><span>PROFILE</span></button>
+  </nav>
+</div>
+
+<!-- modals get mounted here -->
+<div id="modalRoot"></div>
+<div id="sheetRoot"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
