@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>CryptoVault — Wallet</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ============ AUTH CONTAINER ============ -->
+<div class="auth-container" id="authContainer">
+  <!-- LOGIN -->
+  <div class="auth-card" id="loginCard">
+    <div class="auth-logo"><i data-lucide="wallet" style="width:28px;height:28px"></i></div>
+    <h1 class="auth-title">Welcome Back</h1>
+    <p class="auth-subtitle">Sign in to your CryptoVault wallet</p>
+    <div class="form-group">
+      <label class="form-label">Mobile or Email</label>
+      <input type="text" class="form-input" id="loginIdentifier" placeholder="Enter mobile or email" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input type="password" class="form-input" id="loginPassword" placeholder="Enter password" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary" id="loginBtn" style="margin-top:8px">
+      <span>Sign In</span>
+    </button>
+    <p class="auth-switch">Don't have an account? <button class="btn-ghost" onclick="showSignup()">Create Wallet</button></p>
+  </div>
+
+  <!-- SIGNUP -->
+  <div class="auth-card hidden" id="signupCard">
+    <div class="auth-logo"><i data-lucide="plus-circle" style="width:28px;height:28px"></i></div>
+    <h1 class="auth-title">Create Wallet</h1>
+    <p class="auth-subtitle">Start your crypto journey in seconds</p>
+    <div class="form-group">
+      <label class="form-label">Username</label>
+      <input type="text" class="form-input" id="signupUsername" placeholder="Choose a username">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Mobile Number</label>
+      <input type="tel" class="form-input" id="signupMobile" placeholder="10-digit mobile number">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email (optional)</label>
+      <input type="email" class="form-input" id="signupEmail" placeholder="your@email.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input type="password" class="form-input" id="signupPassword" placeholder="Min 6 characters">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Confirm Password</label>
+      <input type="password" class="form-input" id="signupConfirm" placeholder="Re-enter password">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Referral Code (optional)</label>
+      <input type="text" class="form-input" id="signupReferral" placeholder="Enter referral code">
+    </div>
+    <button class="btn btn-primary" id="signupBtn" style="margin-top:8px">
+      <span>Create Wallet</span>
+    </button>
+    <p class="auth-switch">Already have an account? <button class="btn-ghost" onclick="showLogin()">Sign In</button></p>
+  </div>
+</div>
+
+<!-- ============ APP CONTAINER ============ -->
+<div class="app-container" id="appContainer">
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="app-header-title" id="headerTitle">CryptoVault</div>
+    <div class="header-actions">
+      <button class="header-btn" onclick="openNotifications()" title="Notifications">
+        <i data-lucide="bell" style="width:20px;height:20px"></i>
+        <span class="notif-badge hidden" id="notifBadge"></span>
+      </button>
+      <button class="header-btn" onclick="toggleTheme()" title="Toggle theme">
+        <i data-lucide="sun" style="width:20px;height:20px" id="themeIcon"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <div class="app-content">
+
+    <!-- ===== HOME SCREEN ===== -->
+    <div class="screen active" id="screenHome">
+      <div class="balance-card mb-4">
+        <div class="balance-label">Total Portfolio Value</div>
+        <div class="balance-amount" id="totalBalance">&#8377;0.00</div>
+        <div class="balance-change up" id="balanceChange">
+          <i data-lucide="trending-up" style="width:14px;height:14px"></i>
+          <span>+0.00%</span>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button class="action-btn" onclick="openSend()">
+          <div class="action-btn-icon" style="background:var(--accent-blue-light);color:var(--accent-blue)">
+            <i data-lucide="send" style="width:22px;height:22px"></i>
+          </div>
+          <span class="action-btn-label">Send</span>
+        </button>
+        <button class="action-btn" onclick="openReceive()">
+          <div class="action-btn-icon" style="background:var(--accent-green-light);color:var(--accent-green)">
+            <i data-lucide="download" style="width:22px;height:22px"></i>
+          </div>
+          <span class="action-btn-label">Receive</span>
+        </button>
+        <button class="action-btn" onclick="openWithdraw()">
+          <div class="action-btn-icon" style="background:var(--accent-orange-light);color:var(--accent-orange)">
+            <i data-lucide="banknote" style="width:22px;height:22px"></i>
+          </div>
+          <span class="action-btn-label">Withdraw</span>
+        </button>
+      </div>
+
+      <!-- Daily Reward -->
+      <div class="reward-card" id="dailyRewardCard" onclick="claimDailyReward()">
+        <div class="reward-icon"><i data-lucide="gift" style="width:24px;height:24px"></i></div>
+        <div class="flex-1">
+          <div style="font-size:14px;font-weight:600">Daily Reward</div>
+          <div style="font-size:12px;color:var(--text-secondary)">Claim free BTC daily</div>
+        </div>
+        <i data-lucide="chevron-right" style="width:18px;height:18px;color:var(--text-muted)"></i>
+      </div>
+
+      <!-- Portfolio Chart -->
+      <div class="card mt-4" style="padding:16px">
+        <div class="section-header" style="margin-bottom:12px">
+          <span class="section-title">Portfolio</span>
+        </div>
+        <canvas id="portfolioChart" height="160"></canvas>
+      </div>
+
+      <!-- Holdings -->
+      <div class="mt-4">
+        <div class="section-header">
+          <span class="section-title">Holdings</span>
+          <button class="section-link" onclick="switchTab(2)">See All</button>
+        </div>
+        <div class="card" id="homeHoldings" style="padding:4px 16px">
+          <div style="padding:30px 0;text-align:center;color:var(--text-muted);font-size:14px">Loading...</div>
+        </div>
+      </div>
+
+      <!-- Trending -->
+      <div class="mt-4">
+        <div class="section-header">
+          <span class="section-title">Trending</span>
+          <button class="section-link" onclick="switchTab(1)">View Markets</button>
+        </div>
+        <div id="homeTrending"></div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="mt-4">
+        <div class="section-header">
+          <span class="section-title">Recent Activity</span>
+          <button class="section-link" onclick="switchTab(3)">View All</button>
+        </div>
+        <div id="homeActivity">
+          <div style="padding:30px 0;text-align:center;color:var(--text-muted);font-size:14px">No transactions yet</div>
+        </div>
+      </div>
+
+      <div class="disclaimer">This platform is a demo wallet simulator for educational and entertainment purposes only. No real cryptocurrency transactions or banking transfers occur here.</div>
+    </div>
+
+    <!-- ===== MARKETS SCREEN ===== -->
+    <div class="screen" id="screenMarkets">
+      <div class="search-bar">
+        <i data-lucide="search"></i>
+        <input type="text" placeholder="Search coins..." id="marketSearch" oninput="filterMarkets()">
+      </div>
+      <div id="marketList"></div>
+    </div>
+
+    <!-- ===== WALLET SCREEN ===== -->
+    <div class="screen" id="screenWallet">
+      <div class="section-header" style="margin-bottom:16px">
+        <span class="section-title">All Assets</span>
+      </div>
+      <div class="card" id="walletHoldings" style="padding:4px 16px">
+        <div style="padding:30px 0;text-align:center;color:var(--text-muted);font-size:14px">Loading...</div>
+      </div>
+    </div>
+
+    <!-- ===== ACTIVITY SCREEN ===== -->
+    <div class="screen" id="screenActivity">
+      <div class="tab-bar" id="activityTabs">
+        <button class="tab-btn active" onclick="filterActivity('all',this)">All</button>
+        <button class="tab-btn" onclick="filterActivity('sent',this)">Sent</button>
+        <button class="tab-btn" onclick="filterActivity('received',this)">Received</button>
+        <button class="tab-btn" onclick="filterActivity('withdrawal',this)">Withdrawals</button>
+      </div>
+      <div class="search-bar">
+        <i data-lucide="search"></i>
+        <input type="text" placeholder="Search by coin or hash..." id="activitySearch" oninput="filterActivityText()">
+      </div>
+      <div id="activityList">
+        <div style="padding:40px 0;text-align:center;color:var(--text-muted);font-size:14px">No transactions found</div>
+      </div>
+    </div>
+
+    <!-- ===== PROFILE SCREEN ===== -->
+    <div class="screen" id="screenProfile">
+      <div class="profile-header">
+        <div class="profile-avatar" id="profileAvatar">U</div>
+        <div class="profile-name" id="profileName">User</div>
+        <div class="profile-email" id="profileEmail">user@email.com</div>
+      </div>
+
+      <div class="card mb-4" style="padding:16px">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">Wallet Address</div>
+        <div style="font-size:12px;font-family:'SF Mono',monospace;word-break:break-all;color:var(--text-secondary)" id="profileWalletAddr">-</div>
+        <button class="btn btn-sm btn-secondary mt-4" onclick="copyWalletAddress()" style="width:100%">
+          <i data-lucide="copy" style="width:14px;height:14px"></i> Copy Address
+        </button>
+      </div>
+
+      <!-- Referral -->
+      <div class="card mb-4" style="padding:16px">
+        <div style="font-size:14px;font-weight:600;margin-bottom:8px">Referral Code</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="flex-1" style="font-size:16px;font-weight:700;letter-spacing:1px;color:var(--accent-purple)" id="referralCode">-</div>
+          <button class="btn btn-xs btn-secondary" onclick="copyReferralCode()">Copy</button>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:6px">Share with friends & earn rewards</div>
+      </div>
+
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="settings-item" onclick="openSecuritySettings()">
+          <div class="settings-icon" style="background:var(--accent-green-light);color:var(--accent-green)"><i data-lucide="shield-check" style="width:20px;height:20px"></i></div>
+          <span class="settings-label">Security</span>
+          <i data-lucide="chevron-right" style="width:18px;height:18px;color:var(--text-muted)"></i>
+        </div>
+        <div class="settings-item" onclick="openWatchlist()">
+          <div class="settings-icon" style="background:var(--accent-purple-light);color:var(--accent-purple)"><i data-lucide="star" style="width:20px;height:20px"></i></div>
+          <span class="settings-label">Watchlist</span>
+          <i data-lucide="chevron-right" style="width:18px;height:18px;color:var(--text-muted)"></i>
+        </div>
+        <div class="settings-item" onclick="openPriceAlerts()">
+          <div class="settings-icon" style="background:var(--accent-orange-light);color:var(--accent-orange)"><i data-lucide="bell-ring" style="width:20px;height:20px"></i></div>
+          <span class="settings-label">Price Alerts</span>
+          <i data-lucide="chevron-right" style="width:18px;height:18px;color:var(--text-muted)"></i>
+        </div>
+        <div class="settings-item">
+          <div class="settings-icon" style="background:var(--accent-blue-light);color:var(--accent-blue)"><i data-lucide="moon" style="width:20px;height:20px"></i></div>
+          <span class="settings-label">Dark Mode</span>
+          <label style="position:relative;width:44px;height:24px;cursor:pointer">
+            <input type="checkbox" id="darkModeToggle" onchange="toggleTheme()" style="opacity:0;width:0;height:0">
+            <span style="position:absolute;inset:0;background:var(--border-color);border-radius:12px;transition:var(--transition)"></span>
+            <span id="darkModeKnob" style="position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:var(--transition)"></span>
+          </label>
+        </div>
+        <div class="settings-item" onclick="openDeviceHistory()">
+          <div class="settings-icon" style="background:var(--bg-tertiary);color:var(--text-secondary)"><i data-lucide="smartphone" style="width:20px;height:20px"></i></div>
+          <span class="settings-label">Device History</span>
+          <i data-lucide="chevron-right" style="width:18px;height:18px;color:var(--text-muted)"></i>
+        </div>
+        <div class="settings-item danger" onclick="logout()">
+          <div class="settings-icon" style="background:var(--accent-red-light);color:var(--accent-red)"><i data-lucide="log-out" style="width:20px;height:20px"></i></div>
+          <span class="settings-label">Logout</span>
+        </div>
+      </div>
+
+      <div class="disclaimer">This platform is a demo wallet simulator for educational and entertainment purposes only. No real cryptocurrency transactions or banking transfers occur here.</div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="nav-item active" onclick="switchTab(0)" data-tab="0">
+      <i data-lucide="home"></i><span>Home</span>
+    </button>
+    <button class="nav-item" onclick="switchTab(1)" data-tab="1">
+      <i data-lucide="bar-chart-2"></i><span>Markets</span>
+    </button>
+    <button class="nav-item" onclick="switchTab(2)" data-tab="2">
+      <i data-lucide="wallet"></i><span>Wallet</span>
+    </button>
+    <button class="nav-item" onclick="switchTab(3)" data-tab="3">
+      <i data-lucide="clock"></i><span>Activity</span>
+    </button>
+    <button class="nav-item" onclick="switchTab(4)" data-tab="4">
+      <i data-lucide="user"></i><span>Profile</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ============ MODALS ============ -->
+
+<!-- SEND MODAL -->
+<div class="modal-overlay" id="sendModal">
+  <div class="modal-panel">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <span class="modal-title">Send Crypto</span>
+      <button class="modal-close" onclick="closeModal('sendModal')"><i data-lucide="x" style="width:20px;height:20px"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Select Coin</label>
+        <select class="form-select" id="sendCoin" onchange="updateSendMax()">
+          <option value="btc">Bitcoin (BTC)</option>
+          <option value="eth">Ethereum (ETH)</option>
+          <option value="sol">Solana (SOL)</option>
+          <option value="xrp">XRP (XRP)</option>
+          <option value="doge">Dogecoin (DOGE)</option>
+          <option value="bnb">BNB (BNB)</option>
+          <option value="usdt">USDT (USDT)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Recipient Wallet Address</label>
+        <input type="text" class="form-input" id="sendAddress" placeholder="0x...">
+      </div>
+      <div class="form-group">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <label class="form-label" style="margin-bottom:0">Amount</label>
+          <button class="btn-ghost" style="font-size:12px;font-weight:600" onclick="setSendMax()">MAX</button>
+        </div>
+        <input type="number" class="form-input" id="sendAmount" placeholder="0.00" step="any" oninput="updateSendINR()">
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px" id="sendINREst">&#8377;0.00</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px" id="sendAvail">Available: 0.00</div>
+      </div>
+      <button class="btn btn-primary" id="sendBtn" onclick="executeSend()">
+        <span>Send</span>
+      </button>
+      <div class="disclaimer" style="margin-top:12px">This platform is a demo wallet simulator for educational and entertainment purposes only.</div>
+    </div>
+  </div>
+</div>
+
+<!-- RECEIVE MODAL -->
+<div class="modal-overlay" id="receiveModal">
+  <div class="modal-panel">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <span class="modal-title">Receive Crypto</span>
+      <button class="modal-close" onclick="closeModal('receiveModal')"><i data-lucide="x" style="width:20px;height:20px"></i></button>
+    </div>
+    <div class="modal-body" style="text-align:center">
+      <div class="coin-selector" style="justify-content:center" id="receiveCoinSelector"></div>
+      <div class="qr-container" id="qrContainer"></div>
+      <div class="wallet-addr-text" id="receiveAddr">-</div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
+        <button class="btn btn-sm btn-secondary" onclick="copyWalletAddress()"><i data-lucide="copy" style="width:14px;height:14px"></i> Copy</button>
+        <button class="btn btn-sm btn-secondary" onclick="shareWalletAddress()"><i data-lucide="share-2" style="width:14px;height:14px"></i> Share</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WITHDRAW MODAL -->
+<div class="modal-overlay" id="withdrawModal">
+  <div class="modal-panel">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <span class="modal-title">Withdraw to INR</span>
+      <button class="modal-close" onclick="closeModal('withdrawModal')"><i data-lucide="x" style="width:20px;height:20px"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Select Coin to Sell</label>
+        <select class="form-select" id="withdrawCoin" onchange="updateWithdrawMax()">
+          <option value="btc">Bitcoin (BTC)</option>
+          <option value="eth">Ethereum (ETH)</option>
+          <option value="sol">Solana (SOL)</option>
+          <option value="xrp">XRP (XRP)</option>
+          <option value="doge">Dogecoin (DOGE)</option>
+          <option value="bnb">BNB (BNB)</option>
+          <option value="usdt">USDT (USDT)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <label class="form-label" style="margin-bottom:0">Amount</label>
+          <button class="btn-ghost" style="font-size:12px;font-weight:600" onclick="setWithdrawMax()">MAX</button>
+        </div>
+        <input type="number" class="form-input" id="withdrawAmount" placeholder="0.00" step="any" oninput="updateWithdrawINR()">
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px" id="withdrawINREst">&#8377;0.00</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px" id="withdrawAvail">Available: 0.00</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Withdrawal Method</label>
+        <div class="tab-bar" style="margin-bottom:0">
+          <button class="tab-btn active" onclick="setWithdrawMethod('upi',this)">UPI</button>
+          <button class="tab-btn" onclick="setWithdrawMethod('bank',this)">Bank Transfer</button>
+        </div>
+      </div>
+      <div id="withdrawUPIForm">
+        <div class="form-group">
+          <label class="form-label">UPI ID</label>
+          <input type="text" class="form-input" id="withdrawUPI" placeholder="yourname@upi">
+        </div>
+      </div>
+      <div id="withdrawBankForm" class="hidden">
+        <div class="form-group">
+          <label class="form-label">Bank Name</label>
+          <input type="text" class="form-input" id="withdrawBank" placeholder="e.g. State Bank of India">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Account Holder Name</label>
+          <input type="text" class="form-input" id="withdrawHolder" placeholder="Full name as on bank account">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Account Number</label>
+          <input type="text" class="form-input" id="withdrawAccNum" placeholder="Account number">
+        </div>
+        <div class="form-group">
+          <label class="form-label">IFSC Code</label>
+          <input type="text" class="form-input" id="withdrawIFSC" placeholder="e.g. SBIN0001234" style="text-transform:uppercase">
+        </div>
+      </div>
+      <button class="btn btn-primary" id="withdrawBtn" onclick="executeWithdraw()">
+        <span>Submit Withdrawal</span>
+      </button>
+      <div class="disclaimer" style="margin-top:12px">This platform is a demo wallet simulator for educational and entertainment purposes only. No real cryptocurrency transactions or banking transfers occur here.</div>
+    </div>
+  </div>
+</div>
+
+<!-- WITHDRAWAL STATUS MODAL -->
+<div class="modal-overlay center" id="withdrawStatusModal">
+  <div class="modal-panel" style="padding:32px 24px;text-align:center">
+    <div class="success-checkmark" id="withdrawStatusIcon"><i data-lucide="check" style="width:40px;height:40px"></i></div>
+    <h3 style="font-size:20px;font-weight:700;margin-bottom:8px" id="withdrawStatusTitle">Withdrawal Submitted</h3>
+    <p style="font-size:14px;color:var(--text-secondary);line-height:1.6;margin-bottom:20px" id="withdrawStatusMsg">Your withdrawal request has been submitted successfully.</p>
+    <div class="progress-bar mb-4" id="withdrawProgressBar" style="margin-bottom:20px">
+      <div class="progress-fill" id="withdrawProgressFill" style="width:10%"></div>
+    </div>
+    <div class="timeline" style="text-align:left;margin-bottom:24px" id="withdrawTimeline"></div>
+    <button class="btn btn-primary" onclick="closeModal('withdrawStatusModal')">Done</button>
+  </div>
+</div>
+
+<!-- SEND SUCCESS MODAL -->
+<div class="modal-overlay center" id="sendSuccessModal">
+  <div class="modal-panel" style="padding:32px 24px;text-align:center">
+    <div class="success-checkmark"><i data-lucide="check" style="width:40px;height:40px"></i></div>
+    <h3 style="font-size:20px;font-weight:700;margin-bottom:8px">Transaction Sent</h3>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:6px" id="sendSuccessDetail">-</p>
+    <p style="font-size:12px;color:var(--text-muted);font-family:'SF Mono',monospace;word-break:break-all;margin-bottom:20px" id="sendSuccessHash">-</p>
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button class="btn btn-sm btn-secondary" onclick="closeModal('sendSuccessModal')">Close</button>
+      <button class="btn btn-sm btn-primary" onclick="closeModal('sendSuccessModal');switchTab(3)">View Activity</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATIONS MODAL -->
+<div class="modal-overlay" id="notifModal">
+  <div class="modal-panel">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <span class="modal-title">Notifications</span>
+      <button class="modal-close" onclick="closeModal('notifModal')"><i data-lucide="x" style="width:20px;height:20px"></i></button>
+    </div>
+    <div class="modal-body" style="padding:0" id="notifList">
+      <div style="padding:40px 20px;text-align:center;color:var(--text-muted);font-size:14px">No notifications</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECURITY MODAL -->
+<div class="modal-overlay" id="securityModal">
+  <div class="modal-panel">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <span class="modal-title">Security</span>
+      <button class="modal-close" onclick="closeModal('securityModal')"><i data-lucide="x" style="width:20px;height:20px"></i></button>
+    </div>
+    <div class="modal-body">
+      <div style="text-align:center;margin-bottom:24px">
+        <div class="security-score-ring">
+          <svg width="100" height="100"><circle cx="50" cy="50" r="42" fill="none" stroke="var(--border-color)" stroke-width="6"/><circle cx="50" cy="50" r="42" fill="none" stroke="var(--accent-green)" stroke-width="6" stroke-dasharray="264" stroke-dashoffset="66" stroke-linecap="round"/></svg>
+          <div class="security-score-text text-green">75%</div>
+        </div>
+        <div style="font-size:14px;font-weight:600">Security Score</div>
+        <div style="font-size:12px;color:var(--text-muted)">Good — enable 2FA to improve</div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="settings-item">
+          <div class="settings-icon" style="background:var(--accent-blue-light);color:var(--accent-blue)"><i data-lucide="smartphone" style="width:20px;height:20px"></i></div>
+          <span class="settings-label">Two-Factor Auth (Simulated)</span>
+          <label style="position:relative;width:44px;height:24px;cursor:pointer">
+            <input type="checkbox" id="toggle2FA" onchange="toggle2FA()" style="opacity:0;width:0;height:0">
+            <span style="position:absolute;inset:0;background:var(--border-color);border-radius:12px;transition:var(--transition)"></span>
+            <span id="toggle2FAKnob" style="position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:var(--transition)"></span>
+          </label>
+        </div>
+        <div class="settings-item">
+          <div class="settings-icon" style="background:var(--accent-green-light);color:var(--accent-green)"><i data-lucide="fingerprint" style="width:20px;height:20px"></i></div>
+          <span class="settings-label">Biometric Lock (Simulated)</span>
+          <span class="settings-value">Off</span>
+        </div>
+      </div>
+      <div class="mt-4">
+        <div style="font-size:14px;font-weight:600;margin-bottom:12px">Recent Login Activity</div>
+        <div class="card" style="padding:14px 16px" id="loginActivityList">
+          <div style="font-size:13px;color:var(--text-muted)">Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WATCHLIST MODAL -->
+<div class="modal-overlay" id="watchlistModal">
+  <div class="modal-panel">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <span class="modal-title">Watchlist</span>
+      <button class="modal-close" onclick="closeModal('watchlistModal')"><i data-lucide="x" style="width:20px;height:20px"></i></button>
+    </div>
+    <div class="modal-body" id="watchlistContent">
+      <div style="padding:30px 0;text-align:center;color:var(--text-muted);font-size:14px">Your watchlist is empty</div>
+    </div>
+  </div>
+</div>
+
+<!-- PRICE ALERTS MODAL -->
+<div class="modal-overlay" id="priceAlertsModal">
+  <div class="modal-panel">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <span class="modal-title">Price Alerts</span>
+      <button class="modal-close" onclick="closeModal('priceAlertsModal')"><i data-lucide="x" style="width:20px;height:20px"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Coin</label>
+        <select class="form-select" id="alertCoin">
+          <option value="btc">Bitcoin</option>
+          <option value="eth">Ethereum</option>
+          <option value="sol">Solana</option>
+          <option value="xrp">XRP</option>
+          <option value="doge">Dogecoin</option>
+          <option value="bnb">BNB</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Condition</label>
+        <select class="form-select" id="alertCondition">
+          <option value="above">Price goes above</option>
+          <option value="below">Price goes below</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Target Price (INR)</label>
+        <input type="number" class="form-input" id="alertPrice" placeholder="0.00" step="any">
+      </div>
+      <button class="btn btn-primary" onclick="createPriceAlert()">Create Alert</button>
+      <div class="mt-4" id="alertsList">
+        <div style="padding:20px 0;text-align:center;color:var(--text-muted);font-size:14px">No alerts set</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DEVICE HISTORY MODAL -->
+<div class="modal-overlay" id="deviceModal">
+  <div class="modal-panel">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <span class="modal-title">Device History</span>
+      <button class="modal-close" onclick="closeModal('deviceModal')"><i data-lucide="x" style="width:20px;height:20px"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="card" style="padding:16px">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+          <div style="width:44px;height:44px;border-radius:var(--radius-sm);background:var(--accent-green-light);display:flex;align-items:center;justify-content:center;color:var(--accent-green)"><i data-lucide="monitor-smartphone" style="width:22px;height:22px"></i></div>
+          <div><div style="font-size:14px;font-weight:600">Current Device</div><div style="font-size:12px;color:var(--text-muted)" id="deviceInfo">Browser • Unknown OS</div></div>
+          <span class="status-badge completed" style="margin-left:auto">Active</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted)">Last login: <span id="deviceLastLogin">-</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TX DETAIL MODAL -->
+<div class="modal-overlay center" id="txDetailModal">
+  <div class="modal-panel" style="padding:24px">
+    <div class="modal-header" style="padding:0;margin-bottom:16px">
+      <span class="modal-title">Transaction Details</span>
+      <button class="modal-close" onclick="closeModal('txDetailModal')"><i data-lucide="x" style="width:20px;height:20px"></i></button>
+    </div>
+    <div id="txDetailContent"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
