@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>CryptoVault — Admin Panel</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ADMIN AUTH -->
+<div class="auth-container" id="adminAuth">
+  <div class="auth-card">
+    <div class="auth-logo"><i data-lucide="shield" style="width:28px;height:28px"></i></div>
+    <h1 class="auth-title">Admin Access</h1>
+    <p class="auth-subtitle">CryptoVault Management Panel</p>
+    <div class="form-group">
+      <label class="form-label">Mobile or Email</label>
+      <input type="text" class="form-input" id="adminLoginId" placeholder="Enter mobile or email">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input type="password" class="form-input" id="adminLoginPass" placeholder="Enter password">
+    </div>
+    <button class="btn btn-primary" id="adminLoginBtn" style="margin-top:8px"><span>Access Panel</span></button>
+    <p class="auth-switch"><a href="index.html">← Back to Wallet</a></p>
+  </div>
+</div>
+
+<!-- ADMIN LAYOUT -->
+<div class="admin-layout hidden" id="adminLayout">
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="admin-sidebar" id="adminSidebar">
+    <div class="admin-sidebar-logo">
+      <div class="logo-icon"><i data-lucide="shield" style="width:18px;height:18px"></i></div>
+      <div><div style="font-size:16px;font-weight:700">CryptoVault</div><div style="font-size:11px;color:var(--text-muted)">Admin Panel</div></div>
+    </div>
+    <div class="admin-nav-item active" onclick="switchAdminTab('dashboard',this)"><i data-lucide="layout-dashboard"></i>Dashboard</div>
+    <div class="admin-nav-item" onclick="switchAdminTab('users',this)"><i data-lucide="users"></i>Users</div>
+    <div class="admin-nav-item" onclick="switchAdminTab('withdrawals',this)"><i data-lucide="banknote"></i>Withdrawals</div>
+    <div class="admin-nav-item" onclick="switchAdminTab('transactions',this)"><i data-lucide="arrow-left-right"></i>Transactions</div>
+    <div class="admin-nav-item" onclick="switchAdminTab('announcements',this)"><i data-lucide="megaphone"></i>Announcements</div>
+    <div class="admin-nav-item" onclick="switchAdminTab('settings',this)"><i data-lucide="settings"></i>Settings</div>
+    <div style="padding:16px 20px;margin-top:auto;border-top:1px solid var(--border-color)">
+      <div class="admin-nav-item" onclick="adminLogout()" style="padding-left:0;color:var(--accent-red)"><i data-lucide="log-out"></i>Logout</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="admin-main" id="adminMain">
+    <div class="mobile-admin-header">
+      <button class="header-btn" onclick="toggleSidebar()"><i data-lucide="menu" style="width:22px;height:22px"></i></button>
+      <span style="font-size:16px;font-weight:700">CryptoVault Admin</span>
+      <a href="index.html" class="header-btn"><i data-lucide="external-link" style="width:18px;height:18px"></i></a>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="admin-screen active" id="adminDashboard">
+      <div class="admin-header">
+        <h1 class="admin-title">Dashboard</h1>
+        <button class="btn btn-sm btn-secondary" onclick="loadAdminDashboard()"><i data-lucide="refresh-cw" style="width:14px;height:14px"></i> Refresh</button>
+      </div>
+      <div class="stat-grid" id="adminStats">
+        <div class="stat-card"><div class="stat-label">Total Users</div><div class="stat-value" id="statUsers">0</div></div>
+        <div class="stat-card"><div class="stat-label">Total Transactions</div><div class="stat-value" id="statTx">0</div></div>
+        <div class="stat-card"><div class="stat-label">Pending Withdrawals</div><div class="stat-value" id="statPendingWd">0</div></div>
+        <div class="stat-card"><div class="stat-label">Total Portfolio Value</div><div class="stat-value" id="statPortfolio">₹0</div></div>
+      </div>
+      <div class="card" style="padding:16px;margin-bottom:24px">
+        <div style="font-size:14px;font-weight:600;margin-bottom:12px">User Growth</div>
+        <canvas id="adminChart" height="200"></canvas>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div class="admin-screen" id="adminUsers">
+      <div class="admin-header">
+        <h1 class="admin-title">Users</h1>
+      </div>
+      <div class="search-bar" style="max-width:400px;margin-bottom:20px">
+        <i data-lucide="search"></i>
+        <input type="text" placeholder="Search by username, email, mobile..." id="adminUserSearch" oninput="filterAdminUsers()">
+      </div>
+      <div class="admin-table-wrap" style="overflow-x:auto">
+        <table class="admin-table" id="adminUserTable">
+          <thead><tr><th>User</th><th>Mobile</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="adminUserBody"><tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted)">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- WITHDRAWALS -->
+    <div class="admin-screen" id="adminWithdrawals">
+      <div class="admin-header">
+        <h1 class="admin-title">Withdrawals</h1>
+      </div>
+      <div class="tab-bar" style="max-width:400px;margin-bottom:20px">
+        <button class="tab-btn active" onclick="filterAdminWd('all',this)">All</button>
+        <button class="tab-btn" onclick="filterAdminWd('processing',this)">Processing</button>
+        <button class="tab-btn" onclick="filterAdminWd('completed',this)">Completed</button>
+        <button class="tab-btn" onclick="filterAdminWd('rejected',this)">Rejected</button>
+      </div>
+      <div class="admin-table-wrap" style="overflow-x:auto">
+        <table class="admin-table">
+          <thead><tr><th>User</th><th>Coin</th><th>Amount (INR)</th><th>Method</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="adminWdBody"><tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted)">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TRANSACTIONS -->
+    <div class="admin-screen" id="adminTransactions">
+      <div class="admin-header">
+        <h1 class="admin-title">Transactions</h1>
+      </div>
+      <div class="search-bar" style="max-width:400px;margin-bottom:20px">
+        <i data-lucide="search"></i>
+        <input type="text" placeholder="Search by hash, coin..." id="adminTxSearch" oninput="filterAdminTx()">
+      </div>
+      <div class="admin-table-wrap" style="overflow-x:auto">
+        <table class="admin-table">
+          <thead><tr><th>TX Hash</th><th>From</th><th>To</th><th>Coin</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody id="adminTxBody"><tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted)">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ANNOUNCEMENTS -->
+    <div class="admin-screen" id="adminAnnouncements">
+      <div class="admin-header">
+        <h1 class="admin-title">Announcements</h1>
+      </div>
+      <div class="card" style="max-width:600px;margin-bottom:24px">
+        <div class="form-group">
+          <label class="form-label">Title</label>
+          <input type="text" class="form-input" id="announceTitle" placeholder="Announcement title">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Message</label>
+          <textarea class="form-input" id="announceMsg" rows="4" placeholder="Announcement message..." style="height:auto;padding:12px 16px;resize:vertical"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target</label>
+          <select class="form-select" id="announceTarget">
+            <option value="all">All Users</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="sendAnnouncement()" style="width:auto"><i data-lucide="send" style="width:16px;height:16px"></i> Send</button>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="admin-screen" id="adminSettings">
+      <div class="admin-header">
+        <h1 class="admin-title">Settings</h1>
+      </div>
+      <div class="card" style="max-width:600px;margin-bottom:24px">
+        <div style="font-size:14px;font-weight:600;margin-bottom:16px">Platform Configuration</div>
+        <div class="form-group">
+          <label class="form-label">Daily Reward Amount (BTC)</label>
+          <input type="number" class="form-input" id="settingReward" value="0.0001" step="any">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Referral Reward (USDT)</label>
+          <input type="number" class="form-input" id="settingReferral" value="10" step="any">
+        </div>
+        <button class="btn btn-primary" onclick="toast('Settings saved (simulated)','success')" style="width:auto">Save Settings</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT USER MODAL -->
+<div class="modal-overlay center" id="editUserModal">
+  <div class="modal-panel" style="max-width:480px;padding:24px">
+    <div class="modal-header" style="padding:0;margin-bottom:16px">
+      <span class="modal-title">Edit User Balance</span>
+      <button class="modal-close" onclick="closeModal('editUserModal')"><i data-lucide="x" style="width:20px;height:20px"></i></button>
+    </div>
+    <div id="editUserContent"></div>
+  </div>
+</div>
+
+<script src="admin.js"></script>
+</body>
+</html>
