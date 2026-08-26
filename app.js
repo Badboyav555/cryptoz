@@ -5,8 +5,8 @@
 
 /* ────────────────────────────── CONFIG ─────────────────────────────────── */
 /* Paste YOUR Supabase project credentials here (anon/public key only!) */
-const SUPABASE_URL    = 'https://YOUR_PROJECT.supabase.co';
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_PUBLIC_KEY';
+const SUPABASE_URL    = 'https://gztcszwqlkedisbsfuik.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_vB8aiy2kV0NKTmykck_EXA_73kVLUQm';
 
 /* ────────────────────────────── CONSTANTS ──────────────────────────────── */
 const COINS = {
